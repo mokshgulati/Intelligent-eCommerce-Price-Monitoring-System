@@ -69,8 +69,6 @@ async function configureBrowser() {
     }, priceArrOnEbay[0]);
     console.log(priceOnEbay);
     await ebay.close();
-    minPrice();
-    automateNotifications();
 };
 
 async function minPrice() {
@@ -91,23 +89,15 @@ async function minPrice() {
 
 async function automateNotifications() {
     cron.schedule("*/10 * * * * *", function () {
-
-        // Data to write on file
-        let data = `${new Date().toUTCString()} 
-                    : Server is working\n`;
-
-        // Appending data to logs.txt file
+        let data = `${new Date().toUTCString()} : Server is working\n`;
         fs.appendFile("logs.txt", data, function (err) {
-
             if (err) throw err;
-
             console.log("Status Logged!");
         });
     });
 };
 
 async function sendNotification() {
-
     let transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
