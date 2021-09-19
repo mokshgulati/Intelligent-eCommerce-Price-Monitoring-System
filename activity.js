@@ -4,6 +4,7 @@ const request = require('request');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const cron = require('node-cron');
+const nodemailer = require('nodemailer');
 
 const amazonURL = 'https://www.amazon.in/';
 const flipkartURL = 'https://www.flipkart.com/';
@@ -18,8 +19,6 @@ let ebay;       // Page-3 name in browser
 let priceOnAmazon;      // Price of product on Amazon
 let priceOnFlipkart;    // Price of product on Flipkart
 let priceOnEbay;        // Price of product on Ebay
-
-configureBrowser();
 
 async function configureBrowser() {
     const browser = await puppeteer.launch(
@@ -106,3 +105,23 @@ async function automateNotifications() {
         });
     });
 };
+
+async function sendNotification() {
+
+    let transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'amangoel124@gmail.com',
+            pass: 'goelaman'
+        }
+    });
+
+    let info = await transporter.sendMail({
+        from: '"Tucker Fucker" <amangoel124@gmail.com>',
+        to: "mokshgulati99@gmail.com",
+        subject: 'Sending from cron job, cool huh!!!',
+        text: "blah blah blah",
+    });
+
+    console.log("Message sent: ", info.messageId);
+}
