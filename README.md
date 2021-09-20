@@ -6,6 +6,6 @@
 
 𝟐. Also, Once the script is deployed, It constantly monitors the data (prices on each website) at specific time intervals for price drops. If price drops below the set price, It will automatically send the user an email with the link of the product to notify the user that the price is dropped.
 
-𝟑. It will also keep a log of data in a single file every time it automatically checks for prices. The data will include the price of the product on all the websites.
+𝟑. It will also keep a log of data in a single file every time it automatically checks for prices. The data will include the price of the product on all the websites. The file will be automatically made in the same directory.
 
 𝟒. Until stopped manually, It will remain automated in real-time.

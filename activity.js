@@ -1,8 +1,8 @@
-// <In the console>
-// ***** npm i puppeteer
-// ***** npm i node-cron
-// ***** npm init -y
-// ***** npm install nodemailer -S
+// <On the console>
+// *****   npm i puppeteer      *****
+// *****   npm i node-cron      *****
+// *****   npm init -y          *****
+// *****   npm i nodemailer -S  *****
 const fs = require('fs');
 const puppeteer = require('puppeteer');
 const cron = require('node-cron');
@@ -19,14 +19,14 @@ let amazon;     // Page-1 in browser
 let flipkart;   // Page-2 in browser
 let ebay;       // Page-3 in browser
 
-let budgetPrice = 100000;       // Price below which user can buy that product
+let budgetPrice = 130000;       // Price below which user can afford that product
 let priceOnAmazon;              // Price of product on Amazon
 let priceOnFlipkart;            // Price of product on Flipkart
 let priceOnEbay;                // Price of product on Ebay
 
 let minPriceAmount;     // Minimum price after comparing prices on each website
 let minPriceSeller;     // Website which has the lowest price
-let minPriceURL;        // URL of the min price website to the point where you can place order
+let minPriceURL;        // URL of the min price website (to the point where you can place order)
 
 let browser;
 let pages;
@@ -42,7 +42,7 @@ async function configureBrowser() {
     pages = await browser.pages();
 }
 
-async function handleTabs() {
+async function tabsDancing() {
     amazon = pages[0];
     await amazon.goto(amazonURL);
     await amazon.click('.nav-search-field');
@@ -52,7 +52,7 @@ async function handleTabs() {
     let priceArrOnAmazon = await amazon.$$('.a-price-whole');
     priceOnAmazon = await amazon.evaluate(function (elem) {
         return (Number)(elem.textContent.trim().split(',').join(''));
-    }, priceArrOnAmazon[1]);
+    }, priceArrOnAmazon[0]);
     console.log('Price on Amazon        :      ', priceOnAmazon);
 
     flipkart = await browser.newPage();
@@ -123,7 +123,7 @@ async function closeUnnecessaryTabs() {
 }
 
 async function automation() {
-    cron.schedule("*/15 * * * * *", function () {      // Timer interval is set for every 15 seconds (for experimental purposes), It can be changed accordingly
+    cron.schedule("* * * * *", async function () {      // Timer interval is set for every 1 minute (for experimental purposes), It can be changed accordingly
         // Data to be logged into the file
         let data = `${new Date().toUTCString()} : Current Monitored prices =>\n               Amazon         :   ₹.${priceOnAmazon}\n               Flipkart       :   ₹.${priceOnFlipkart}\n               Ebay           :   ₹.${priceOnEbay}\n\nBest to buy from ${minPriceSeller} at *** ₹.${minPriceAmount} ***\n\n`;
         // Logs data into the file at set time intervals
@@ -133,8 +133,10 @@ async function automation() {
         });
         // Send mail on price drops below the set budget price
         if (minPriceAmount < budgetPrice) {
-            // sendNotification();
+            sendNotification();
         }
+        await browser.close();
+        await monitorData();
     });
 };
 
@@ -144,25 +146,35 @@ async function sendNotification() {
         auth: {
             user: 'amangoel124@gmail.com',
             pass: 'goelaman'
+            // Note: Open this link to Allow less secure apps: ON
+            // Link: https://myaccount.google.com/lesssecureapps
         }
     });
 
     let info = await transporter.sendMail({
         from: '"Moksh Gulati" <amangoel124@gmail.com>',
-        to: "mokshgulati99@gmail.com",
+        to: "mokshgulati99@gmail.com",      // The email ID on which you aspire to get the notification mail.
         subject: 'Prices dropped!!! Go get a grab!',
         text: `Price of your ${product} just fell into your budget.\nGo get a grab on before the deal ends.\nCURRENT PRICE :    ${minPriceAmount}\nGoto : ${minPriceURL}`
+        // Check spam too for the mail
     });
 
     console.log("Message sent: ", info.messageId);
 }
 
-async function startMonitoring() {
+async function automateMonitoring() {
     await configureBrowser();
-    await handleTabs();
+    await tabsDancing();
     await minPrice();
-    await closeUnnecessaryTabs();
+    await closeUnnecessaryTabs();   
     await automation();
 }
 
-startMonitoring();
+async function monitorData() {
+    await configureBrowser();
+    await tabsDancing();
+    await minPrice();
+    await closeUnnecessaryTabs();
+}
+
+automateMonitoring();
