@@ -1,7 +1,9 @@
+// <In the console>
+// ***** npm i puppeteer
+// ***** npm i node-cron
+// ***** npm init -y
+// ***** npm install nodemailer -S
 const fs = require('fs');
-const path = require('path');
-const request = require('request');
-const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
@@ -9,27 +11,38 @@ const nodemailer = require('nodemailer');
 const amazonURL = 'https://www.amazon.in/';
 const flipkartURL = 'https://www.flipkart.com/';
 const ebayURL = 'https://www.ebay.com/';
+// More websites can be added accordingly
 
-const product = 'iphone 12 pro max 256gb';
+const product = 'new iphone 12 pro max 256gb';      // <Input> (Product name)
 
-let amazon;     // Page-1 name in browser
-let flipkart;   // Page-2 name in browser
-let ebay;       // Page-3 name in browser
+let amazon;     // Page-1 in browser
+let flipkart;   // Page-2 in browser
+let ebay;       // Page-3 in browser
 
-let priceOnAmazon;      // Price of product on Amazon
-let priceOnFlipkart;    // Price of product on Flipkart
-let priceOnEbay;        // Price of product on Ebay
+let budgetPrice = 100000;       // Price below which user can buy that product
+let priceOnAmazon;              // Price of product on Amazon
+let priceOnFlipkart;            // Price of product on Flipkart
+let priceOnEbay;                // Price of product on Ebay
+
+let minPriceAmount;     // Minimum price after comparing prices on each website
+let minPriceSeller;     // Website which has the lowest price
+let minPriceURL;        // URL of the min price website to the point where you can place order
+
+let browser;
+let pages;
 
 async function configureBrowser() {
-    const browser = await puppeteer.launch(
+    browser = await puppeteer.launch(
         {
             headless: false,
             defaultViewport: null,
             args: ['--start-maximized']
         }
     );
-    const pages = await browser.pages();
+    pages = await browser.pages();
+}
 
+async function handleTabs() {
     amazon = pages[0];
     await amazon.goto(amazonURL);
     await amazon.click('.nav-search-field');
@@ -39,9 +52,8 @@ async function configureBrowser() {
     let priceArrOnAmazon = await amazon.$$('.a-price-whole');
     priceOnAmazon = await amazon.evaluate(function (elem) {
         return (Number)(elem.textContent.trim().split(',').join(''));
-    }, priceArrOnAmazon[0]);
-    console.log(priceOnAmazon);
-    await amazon.close();
+    }, priceArrOnAmazon[1]);
+    console.log('Price on Amazon        :      ', priceOnAmazon);
 
     flipkart = await browser.newPage();
     await flipkart.goto(flipkartURL);
@@ -54,8 +66,7 @@ async function configureBrowser() {
     priceOnFlipkart = await flipkart.evaluate(function (elem) {
         return (Number)(elem.textContent.trim().slice(1).split(',').join(''));
     }, priceArrOnFlipkart[0]);
-    console.log(priceOnFlipkart);
-    await flipkart.close();
+    console.log('Price on Flipkart      :      ', priceOnFlipkart);
 
     ebay = await browser.newPage();
     await ebay.goto(ebayURL);
@@ -67,33 +78,63 @@ async function configureBrowser() {
     priceOnEbay = await ebay.evaluate(function (elem) {
         return (Number)(elem.textContent.trim().slice(1).split(',').join('').split('.')[0]) * 74;
     }, priceArrOnEbay[0]);
-    console.log(priceOnEbay);
-    await ebay.close();
+    console.log('Price on Ebay          :      ', priceOnEbay);
 };
 
 async function minPrice() {
     if (priceOnAmazon < priceOnFlipkart) {
         if (priceOnAmazon < priceOnEbay) {
-            console.log('Buy from Amazon on', priceOnAmazon);
+            console.log('***** Buy from Amazon on', priceOnAmazon, '*****');
+            minPriceAmount = priceOnAmazon;
+            minPriceSeller = 'AMAZON';
+            minPriceURL = 'https://www.amazon.in/s?k=iphone+12+pro+max+256gb&ref=nb_sb_noss_1';
         } else {
-            console.log('Buy from Ebay on', priceOnEbay);
+            console.log('***** Buy from Ebay on', priceOnEbay, '*****');
+            minPriceAmount = priceOnEbay;
+            minPriceSeller = 'EBAY';
+            minPriceURL = 'https://www.ebay.com/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=iphone+12+pro+max+256gb&_sacat=0&LH_TitleDesc=0&_odkw=iphone+12+pro+max+256+gb&_osacat=0';
         }
     } else {
         if (priceOnFlipkart < priceOnEbay) {
-            console.log('Buy from FLipkart on', priceOnFlipkart);
+            console.log('***** Buy from FLipkart on', priceOnFlipkart, '*****');
+            minPriceAmount = priceOnFlipkart;
+            minPriceSeller = 'FLIPKART';
+            minPriceURL = 'https://www.flipkart.com/search?q=iphone%2012%20pro%20max%20256gb&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=off&as=off';
         } else {
-            console.log('Buy from Ebay on', priceOnEbay);
+            console.log('***** Buy from Ebay on', priceOnEbay, '*****');
+            minPriceAmount = priceOnEbay;
+            minPriceSeller = 'EBAY';
+            minPriceURL = 'https://www.ebay.com/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=iphone+12+pro+max+256gb&_sacat=0&LH_TitleDesc=0&_odkw=iphone+12+pro+max+256+gb&_osacat=0';
         }
     }
 }
 
-async function automateNotifications() {
-    cron.schedule("*/10 * * * * *", function () {
-        let data = `${new Date().toUTCString()} : Server is working\n`;
+async function closeUnnecessaryTabs() {
+    if (minPriceSeller == 'AMAZON') {
+        flipkart.close();
+        ebay.close();
+    } else if (minPriceSeller == 'FLIPKART') {
+        amazon.close();
+        ebay.close();
+    } else {
+        amazon.close();
+        flipkart.close();
+    }
+}
+
+async function automation() {
+    cron.schedule("*/15 * * * * *", function () {      // Timer interval is set for every 15 seconds (for experimental purposes), It can be changed accordingly
+        // Data to be logged into the file
+        let data = `${new Date().toUTCString()} : Current Monitored prices =>\n               Amazon         :   ₹.${priceOnAmazon}\n               Flipkart       :   ₹.${priceOnFlipkart}\n               Ebay           :   ₹.${priceOnEbay}\n\nBest to buy from ${minPriceSeller} at *** ₹.${minPriceAmount} ***\n\n`;
+        // Logs data into the file at set time intervals
         fs.appendFile("logs.txt", data, function (err) {
             if (err) throw err;
             console.log("Status Logged!");
         });
+        // Send mail on price drops below the set budget price
+        if (minPriceAmount < budgetPrice) {
+            // sendNotification();
+        }
     });
 };
 
@@ -107,11 +148,21 @@ async function sendNotification() {
     });
 
     let info = await transporter.sendMail({
-        from: '"Tucker Fucker" <amangoel124@gmail.com>',
+        from: '"Moksh Gulati" <amangoel124@gmail.com>',
         to: "mokshgulati99@gmail.com",
-        subject: 'Sending from cron job, cool huh!!!',
-        text: "blah blah blah",
+        subject: 'Prices dropped!!! Go get a grab!',
+        text: `Price of your ${product} just fell into your budget.\nGo get a grab on before the deal ends.\nCURRENT PRICE :    ${minPriceAmount}\nGoto : ${minPriceURL}`
     });
 
     console.log("Message sent: ", info.messageId);
 }
+
+async function startMonitoring() {
+    await configureBrowser();
+    await handleTabs();
+    await minPrice();
+    await closeUnnecessaryTabs();
+    await automation();
+}
+
+startMonitoring();
