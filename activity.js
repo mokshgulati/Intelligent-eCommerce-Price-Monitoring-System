@@ -107,24 +107,24 @@ async function minPrice() {
             console.log('***** Buy from Amazon on', priceOnAmazon, '*****');
             minPriceAmount = priceOnAmazon;
             minPriceSeller = 'AMAZON';
-            minPriceURL = 'https://www.amazon.in/s?k=iphone+12+pro+max+256gb&ref=nb_sb_noss_1';
+            minPriceURL = 'https://www.amazon.in/New-Apple-iPhone-Pro-256GB/dp/B08L5T31M6/ref=sr_1_1?dchild=1&keywords=iphone+12+pro+max+256gb&qid=1632153792&qsid=257-7075868-1477109&sr=8-1&sres=B08L5T31M6%2CB08L5V825S%2CB08Z6K7Z4S%2CB08L5W2S3Q%2CB08Z72BSJJ%2CB08L5WFZCP%2CB08Z6W92VP%2CB08Z721V2R%2CB08Z6Q456F%2CB08Z6Q456G%2CB08Z6Q7VWS%2CB08L5T2XSF%2CB08L5T44CQ%2CB08L5VPTDK%2CB08L5VF4J4%2CB08L5V6N2K&srpt=CELLULAR_PHONE';
         } else {
             console.log('***** Buy from Ebay on', priceOnEbay, '*****');
             minPriceAmount = priceOnEbay;
             minPriceSeller = 'EBAY';
-            minPriceURL = 'https://www.ebay.com/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=iphone+12+pro+max+256gb&_sacat=0&LH_TitleDesc=0&_odkw=iphone+12+pro+max+256+gb&_osacat=0';
+            minPriceURL = 'https://www.ebay.com/itm/234192276879?epid=8041719568&hash=item3686f28d8f:g:L5wAAOSwMKBhRLs1';
         }
     } else {
         if (priceOnFlipkart < priceOnEbay) {
             console.log('***** Buy from FLipkart on', priceOnFlipkart, '*****');
             minPriceAmount = priceOnFlipkart;
             minPriceSeller = 'FLIPKART';
-            minPriceURL = 'https://www.flipkart.com/search?q=iphone%2012%20pro%20max%20256gb&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=off&as=off';
+            minPriceURL = 'https://www.flipkart.com/apple-iphone-12-pro-max-pacific-blue-256-gb/p/itm3a0860c94250e?pid=MOBFWBYZ8STJXCVT&lid=LSTMOBFWBYZ8STJXCVT92HUS8&marketplace=FLIPKART&q=iphone+12+pro+max+256gb&store=tyy%2F4io&srno=s_1_1&otracker=search&otracker1=search&fm=organic&iid=3ba6963b-5669-4e5f-92db-5d8a6d2ac3fa.MOBFWBYZ8STJXCVT.SEARCH&ppt=None&ppn=None&ssid=aye62vtsuo0000001632125115497&qH=68c47abe9cd2f4fc';
         } else {
             console.log('***** Buy from Ebay on', priceOnEbay, '*****');
             minPriceAmount = priceOnEbay;
             minPriceSeller = 'EBAY';
-            minPriceURL = 'https://www.ebay.com/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=iphone+12+pro+max+256gb&_sacat=0&LH_TitleDesc=0&_odkw=iphone+12+pro+max+256+gb&_osacat=0';
+            minPriceURL = 'https://www.ebay.com/itm/234192276879?epid=8041719568&hash=item3686f28d8f:g:L5wAAOSwMKBhRLs1';
         }
     }
 }
@@ -133,12 +133,15 @@ async function closeUnnecessaryTabs() {
     if (minPriceSeller == 'AMAZON') {
         await flipkart.close();
         await ebay.close();
+        await amazon.click('.a-price-whole');
     } else if (minPriceSeller == 'FLIPKART') {
         await amazon.close();
         await ebay.close();
+        await flipkart.click('._30jeq3._1_WHN1');
     } else {
         await amazon.close();
         await flipkart.close();
+        await ebay.click('.s-item__price');
     }
 }
 
