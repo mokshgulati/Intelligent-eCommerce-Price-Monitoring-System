@@ -40,9 +40,11 @@ async function configureBrowser() {
         }
     );
     pages = await browser.pages();
+
+    await dancingAround();
 }
 
-async function tabsDancing() {
+async function dancingAround() {
     amazon = pages[0];
     await amazon.goto(amazonURL);
     await amazon.click('.nav-search-field');
@@ -79,7 +81,25 @@ async function tabsDancing() {
         return (Number)(elem.textContent.trim().slice(1).split(',').join('').split('.')[0]) * 74;
     }, priceArrOnEbay[0]);
     console.log('Price on Ebay          :      ', priceOnEbay);
+
+    await minPrice();
+    await closeUnnecessaryTabs();
+    await dataLoggingNdNotify();
 };
+
+async function dataLoggingNdNotify() {
+    // Data to be logged into the file
+    let data = `${new Date().toUTCString()} : Current Monitored prices =>\n               Amazon         :   ₹.${priceOnAmazon}\n               Flipkart       :   ₹.${priceOnFlipkart}\n               Ebay           :   ₹.${priceOnEbay}\n\nBest to buy from ${minPriceSeller} at *** ₹.${minPriceAmount} ***\n\n`;
+    // Logs data into the file at set time intervals
+    fs.appendFile("logs.txt", data, function (err) {
+        if (err) throw err;
+        console.log("Status Logged!");
+    });
+    // Send mail on price drops below the set budget price
+    if (minPriceAmount < budgetPrice) {
+        await sendNotification();
+    }
+}
 
 async function minPrice() {
     if (priceOnAmazon < priceOnFlipkart) {
@@ -111,32 +131,22 @@ async function minPrice() {
 
 async function closeUnnecessaryTabs() {
     if (minPriceSeller == 'AMAZON') {
-        flipkart.close();
-        ebay.close();
+        await flipkart.close();
+        await ebay.close();
     } else if (minPriceSeller == 'FLIPKART') {
-        amazon.close();
-        ebay.close();
+        await amazon.close();
+        await ebay.close();
     } else {
-        amazon.close();
-        flipkart.close();
+        await amazon.close();
+        await flipkart.close();
     }
 }
 
 async function automation() {
-    cron.schedule("* * * * *", async function () {      // Timer interval is set for every 1 minute (for experimental purposes), It can be changed accordingly
-        // Data to be logged into the file
-        let data = `${new Date().toUTCString()} : Current Monitored prices =>\n               Amazon         :   ₹.${priceOnAmazon}\n               Flipkart       :   ₹.${priceOnFlipkart}\n               Ebay           :   ₹.${priceOnEbay}\n\nBest to buy from ${minPriceSeller} at *** ₹.${minPriceAmount} ***\n\n`;
-        // Logs data into the file at set time intervals
-        fs.appendFile("logs.txt", data, function (err) {
-            if (err) throw err;
-            console.log("Status Logged!");
-        });
-        // Send mail on price drops below the set budget price
-        if (minPriceAmount < budgetPrice) {
-            sendNotification();
-        }
+    // Timer interval is set for every 1 minute (for experimental purposes), It can be changed accordingly
+    cron.schedule("* * * * *", async function () {
         await browser.close();
-        await monitorData();
+        await configureBrowser();
     });
 };
 
@@ -164,17 +174,7 @@ async function sendNotification() {
 
 async function automateMonitoring() {
     await configureBrowser();
-    await tabsDancing();
-    await minPrice();
-    await closeUnnecessaryTabs();   
     await automation();
-}
-
-async function monitorData() {
-    await configureBrowser();
-    await tabsDancing();
-    await minPrice();
-    await closeUnnecessaryTabs();
 }
 
 automateMonitoring();
