@@ -183,7 +183,7 @@ async function sendNotification() {
             service: 'gmail',
             auth: {
                 user: 'amangoel124@gmail.com',
-                pass: 'goelaman'
+                pass: '********'
                 // Note: Open this link to Allow less secure apps: ON
                 // Link: https://myaccount.google.com/lesssecureapps
             }
