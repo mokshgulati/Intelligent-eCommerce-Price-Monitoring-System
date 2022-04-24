@@ -31,6 +31,21 @@ let minPriceURL;        // URL of the min price website (to the point where you 
 let browser;
 let pages;
 
+// ********** ASYNC- AWAIT **********
+// async await instead of then and catch
+// to prevent chaining with "then"
+// basically, fn is notified as async (async written at the start of the fn name)
+// and await is used everytime we give a command that generates a promise
+// awaits make sure that the code doesn't run ahead until the current promise is resolved
+// everything is same, all the normal flow of program is still intact
+// just all the async fns that gets separated from the normal flow to the node API,
+// bcz of await, their order is maintained
+// In other words, async fns separate nonetheless, they just work syncronously (not haphazard manner/order)
+// ****************************************************
+// that's why async await is considered better than "then chaining"
+// bcz chaining is prevented and program flow is maintained
+
+// configuring browser (new chromium instance)
 async function configureBrowser() {
     try {
         browser = await puppeteer.launch(
@@ -48,6 +63,7 @@ async function configureBrowser() {
     }
 }
 
+// Main work -> like opening sites one by one, searching for the product, keeping log of the price
 async function dancingAround() {
     try {
         amazon = pages[0];
@@ -95,6 +111,7 @@ async function dancingAround() {
     }
 };
 
+// logging tha gathered data into a log file
 async function dataLoggingNdNotify() {
     try {
         // Data to be logged into the file
@@ -113,6 +130,7 @@ async function dataLoggingNdNotify() {
     }
 }
 
+// comparing price of the product on different sites
 async function minPrice() {
     try {
         if (priceOnAmazon < priceOnFlipkart) {
@@ -145,6 +163,7 @@ async function minPrice() {
     }
 }
 
+// closing the tabs already worked with
 async function closeUnnecessaryTabs() {
     try {
         if (minPriceSeller == 'AMAZON') {
@@ -165,6 +184,9 @@ async function closeUnnecessaryTabs() {
     }
 }
 
+// Using cron jobs
+// automating the task (all the Main work) to happen again and again after a certain period of time
+// in this scenario -> 1 minute
 async function automation() {
     try {
         // Timer interval is set for every 1 minute (for experimental purposes), It can be changed accordingly
@@ -177,6 +199,9 @@ async function automation() {
     }
 };
 
+// using mailer
+// to send main everyrtime our defined condition is fulfilled
+// In this scenario -> when price captured is below our budget price
 async function sendNotification() {
     try {
         let transporter = nodemailer.createTransport({
@@ -201,6 +226,8 @@ async function sendNotification() {
     }
 }
 
+// Automating the task in specific order
+// this functions defines that order of tasks happening
 async function automateMonitoring() {
     try {
         await configureBrowser();
@@ -210,4 +237,5 @@ async function automateMonitoring() {
     }
 }
 
+// Start the System
 automateMonitoring();
